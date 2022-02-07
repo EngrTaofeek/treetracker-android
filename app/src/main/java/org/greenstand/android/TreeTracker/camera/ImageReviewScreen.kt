@@ -6,20 +6,28 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import org.greenstand.android.TreeTracker.activities.CaptureImageContract
 import org.greenstand.android.TreeTracker.models.NavRoute
 import org.greenstand.android.TreeTracker.root.LocalNavHostController
+import org.greenstand.android.TreeTracker.root.LocalViewModelFactory
+import org.greenstand.android.TreeTracker.signup.SignupViewModel
 import org.greenstand.android.TreeTracker.view.*
 
 @Composable
-fun ImageReviewScreen(photoPath: String) {
+fun ImageReviewScreen(
+    photoPath: String,
+    viewModel: SignupViewModel = viewModel(factory = LocalViewModelFactory.current)
+) {
 
     val navController = LocalNavHostController.current
-    val activity = LocalContext.current as Activity
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         bottomBar = {
@@ -41,11 +49,23 @@ fun ImageReviewScreen(photoPath: String) {
                 )
                 ApprovalButton(
                     onClick = {
-                        val data = Intent().apply {
-                            putExtra(CaptureImageContract.TAKEN_IMAGE_PATH, photoPath)
+                        scope.launch {
+                            viewModel.createUser(photoPath)?.let { user ->
+                                if (user.isPowerUser) {
+                                    // In initial signup flow, clear stack and go to dashboard
+                                    navController.navigate(NavRoute.Dashboard.route) {
+                                        popUpTo(NavRoute.Language.route) { inclusive = true }
+                                        launchSingleTop = true
+                                    }
+                                } else {
+                                    // In tracking flow, clear login stack and go to wallet selection flow
+                                    navController.navigate(NavRoute.WalletSelect.create(user.id)) {
+                                        popUpTo(NavRoute.SignupFlow.route) { inclusive = true }
+                                        launchSingleTop = true
+                                    }
+                                }
+                            }
                         }
-                        activity.setResult(AppCompatActivity.RESULT_OK, data)
-                        activity.finish()
                     },
                     approval = true
                 )
