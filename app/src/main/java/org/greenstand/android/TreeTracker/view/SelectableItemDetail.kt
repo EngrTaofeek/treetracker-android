@@ -97,6 +97,7 @@ fun UserButton(
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
+        //test if unnecessary commits are still showing
             )
         Text(
             text = user.wallet,
