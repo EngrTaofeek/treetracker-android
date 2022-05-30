@@ -164,6 +164,9 @@ fun DashboardScreen(
                     .fillMaxSize(),
                 colors = AppButtonColors.MessagePurple,
                 onClick = {
+                    scope.launch {
+                        viewModel.syncMessages()
+                    }
                     navController.navigate(NavRoute.MessagesUserSelect.route)
                 },
                 image = painterResource(id = R.drawable.announcement_icon)

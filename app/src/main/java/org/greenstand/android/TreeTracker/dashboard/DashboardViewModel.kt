@@ -23,6 +23,8 @@ import org.greenstand.android.TreeTracker.background.TreeSyncWorker
 import org.greenstand.android.TreeTracker.database.TreeTrackerDAO
 import org.greenstand.android.TreeTracker.models.FeatureFlags
 import org.greenstand.android.TreeTracker.models.location.LocationDataCapturer
+import org.greenstand.android.TreeTracker.models.messages.MessagesRepo
+import org.greenstand.android.TreeTracker.usecases.CheckForInternetUseCase
 import java.util.concurrent.TimeUnit
 import kotlin.properties.Delegates
 
@@ -38,6 +40,8 @@ class DashboardViewModel(
     private val analytics: Analytics,
     private val treesToSyncHelper: TreesToSyncHelper,
     locationDataCapturer: LocationDataCapturer,
+    private val messagesRepo: MessagesRepo,
+    private val checkForInternetUseCase: CheckForInternetUseCase,
 ) : ViewModel() {
 
     private val _state = MutableLiveData<DashboardState>()
@@ -125,6 +129,14 @@ class DashboardViewModel(
                 _state.value?.let { (total, synced, waiting) ->
                     analytics.stopButtonTapped(total, synced, waiting)
                 }
+            }
+        }
+    }
+
+    suspend fun syncMessages() {
+        if (checkForInternetUseCase.execute(Unit)) {
+            withContext(Dispatchers.IO) {
+                messagesRepo.syncMessages()
             }
         }
     }
